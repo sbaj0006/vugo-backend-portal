@@ -1,0 +1,95 @@
+service:
+  name: ${file(../../../../package.json ):name}-admin-api-assets
+
+plugins:
+  - serverless-webpack
+  - serverless-offline
+  - serverless-aws-documentation
+  - serverless-plugin-resource-tagging
+  - serverless-dotenv-plugin
+  - serverless-deployment-bucket
+provider:
+  name: aws
+  stackTags:
+    'Vugo Environment': 'Vugo'
+  apiVersion: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):apiVersion}
+  runtime: nodejs12.x
+  stage: ${opt:stage, 'dev'} # Stage env for backend development, dev env for app users testing, production for released version
+  region: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):region}
+  role: ${self:custom.iamRole}
+  environment:
+    STAGE: ${self:provider.stage}
+    S3_BUCKET_NAME:  ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):assetBucketName}
+  deploymentBucket:
+    name: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):srcBucketName}
+  apiGateway: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):adminApiGateway}
+  tags:
+    apiVersion: ${self:provider.apiVersion}
+  versionFunctions: false
+
+functions:
+  create-assets-folder:
+    handler: assets.createAssetsFolder
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/assets/public/folders
+          cors: true
+          documentation:
+            summary: 'Create Assets Folder'
+            description: 'Create Assets Folder'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Assets Folder Details'
+  get-assets-folder-content:
+    handler: assets.getFolderContent
+    events:
+      - http:
+          method: get
+          path: ${self:custom.adminBaseUrl}/assets/public/folders/{folderId}
+          cors: true
+          documentation:
+            summary: 'Get Assets Folder Content'
+            description: 'Get Assets Folder Content'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Assets Folder Details'
+  delete-assets-folder:
+    handler: assets.deleteAsset
+    events:
+      - http:
+          method: delete
+          path: ${self:custom.adminBaseUrl}/assets/{assetId}
+          cors: true
+          documentation:
+            summary: 'Delete Assets Folder'
+            description: 'Delete Assets Folder'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Assets Folder Details'
+  upload-image:
+    handler: assets.uploadImage
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/assets/public/folders/{folderId}/images
+          cors: true
+          documentation:
+            summary: 'Upload Assets Images'
+            description: 'Upload Assets Images'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Assets Images Details'
+custom:
+  iamRole: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):adminIamRole}
+  adminBaseUrl: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):adminBaseUrl}
+  serverless-offline:
+    port: 4000
+  dotenv:
+    path: ../../../../.env 
+    basePath: ./
+    logging: false

@@ -1,0 +1,264 @@
+service:
+  name: ${file(../../../../package.json ):name}-public-api-users
+
+plugins:
+  - serverless-webpack
+  - serverless-offline
+  - serverless-aws-documentation
+  - serverless-plugin-resource-tagging
+  - serverless-dotenv-plugin
+  - serverless-deployment-bucket
+provider:
+  name: aws
+  stackTags:
+    'Vugo Environment': 'Vugo'
+  apiVersion: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):apiVersion}
+  runtime: nodejs12.x
+  stage: ${opt:stage, 'dev'} # Stage env for backend development, dev env for app users testing, production for released version
+  region: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):region}
+  role: ${self:custom.iamRole}
+  deploymentBucket:
+    name: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):srcBucketName}
+    serverSideEncryption: AES256
+  environment:
+    STAGE: ${self:provider.stage}
+    S3_BUCKET_NAME:  ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):assetBucketName}
+  apiGateway: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):publicApiGateway}
+  tags:
+    apiVersion: ${self:provider.apiVersion}
+  versionFunctions: false
+
+functions:
+  user-signup:
+    handler: users.signUpHandler
+    events:
+      - http:
+          method: post
+          path: ${self:custom.publicBaseUrl}/users/signup
+          cors: true
+          documentation:
+            summary: 'user signup'
+            description: 'normal user signup to cognito user pool'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains result'
+  user-signin:
+    handler: users.signInHandler
+    events:
+      - http:
+          method: post
+          path: ${self:custom.publicBaseUrl}/users/signin
+          cors: true
+          documentation:
+            summary: 'user sign in'
+            description: 'user sign in with cognito token'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains result'
+  user-forgot-password:
+    handler: users.forgotPasswordHandler
+    events:
+      - http:
+          method: post
+          path: ${self:custom.publicBaseUrl}/users/forgot-password
+          cors: true
+          documentation:
+            summary: 'user forgot password'
+            description: 'user make forgot password request'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains result'
+  user-reset-password:
+    handler: users.resetPasswordHandler
+    events:
+      - http:
+          method: post
+          path: ${self:custom.publicBaseUrl}/users/{userId}/reset-password
+          cors: true
+          documentation:
+            summary: 'user reset password'
+            description: 'user make reset password request'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains result'
+  user-change-password:
+    handler: users.changePasswordHandler
+    events:
+      - http:
+          method: post
+          path: ${self:custom.publicBaseUrl}/users/change-password
+          cors: true
+          documentation:
+            summary: 'user change password'
+            description: 'user change password'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains result'
+  user-activate:
+    handler: users.activateAccountHandler
+    events:
+      - http:
+          method: post
+          path: ${self:custom.publicBaseUrl}/users/{userId}/activate
+          cors: true
+          documentation:
+            summary: 'user activate account'
+            description: 'user activate account'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains result'
+  update-user-info-me:
+    handler: users.updateUserHandler
+    events:
+      - http:
+          method: post
+          path: ${self:custom.publicBaseUrl}/users/{userId}
+          cors: true
+          documentation:
+            summary: 'update user info'
+            description: 'update user firstname and lastname'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains result'
+  get-user-info-me:
+    handler: users.getMeInfoHandler
+    events:
+      - http:
+          method: get
+          path: ${self:custom.publicBaseUrl}/users/me
+          cors: true
+          documentation:
+            summary: 'get me info'
+            description: 'get user info as me'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains result'
+  get-user-device-ids:
+    handler: users.getUserDeviceHandler
+    events:
+      - http:
+          method: get
+          path: ${self:custom.publicBaseUrl}/users/{userId}/devices
+          cors: true
+          documentation:
+            summary: 'get user sign in devices'
+            description: 'get user sign in devices for a specific user'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains result'
+  get-user-recent-activities:
+    handler: users.getUserActivitiesHandler
+    events:
+      - http:
+          method: get
+          path: ${self:custom.publicBaseUrl}/users/{userId}/recent-activities
+          cors: true
+          documentation:
+            summary: 'get user sign in activities'
+            description: 'get user sign in activities'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains result'
+  get-user-purchase-history:
+    handler: users.purchaseHistoryHandler
+    events:
+      - http:
+          method: get
+          path: ${self:custom.publicBaseUrl}/users/{userId}/purchase-history
+          cors: true
+          documentation:
+            summary: 'get user product'
+            description: 'get products related to user'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains result'
+  get-user-product:
+    handler: users.userProductHandler
+    events:
+      - http:
+          method: get
+          path: ${self:custom.publicBaseUrl}/users/{userId}/product
+          cors: true
+          documentation:
+            summary: 'get user product'
+            description: 'get products related to user'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains result'
+  get-signed-cookies:
+    handler: users.getSignedCookieHandler
+    events:
+      - http:
+          method: get
+          path: ${self:custom.publicBaseUrl}/users/signed-cookies
+          cors: true
+          documentation:
+            summary: 'get signed cookies'
+            description: 'get signed cookies for user'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains result'
+  social-sign-in:
+    handler: users.socialSignInHandler
+    events:
+      - http:
+          method: post
+          path: ${self:custom.publicBaseUrl}/users/social-sign-in
+          cors: true
+          documentation:
+            summary: 'user social sign in'
+            description: 'user social sign in'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains result'
+  user-purchase-titles:
+    handler: users.userTitlesHandler
+    events:
+      - http:
+          method: get
+          path: ${self:custom.publicBaseUrl}/users/{userId}/titles
+          cors: true
+          documentation:
+            summary: 'get purchase titles'
+            description: 'get purchase titles'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains result'
+  create-user-purchase:
+    handler: users.createUserPurchaseHandler
+    events:
+      - http:
+          method: post
+          path: ${self:custom.publicBaseUrl}/users/{userId}/titles/{titleId}
+          cors: true
+          documentation:
+            summary: 'create purchase titles'
+            description: 'create purchase titles'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains result'
+custom:
+  iamRole: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):publicIamRole}
+  publicBaseUrl: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):publicBaseUrl}
+  serverless-offline:
+    port: 4000
+  dotenv:
+    path: ../../../../.env 
+    basePath: ./
+    logging: false

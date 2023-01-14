@@ -1,0 +1,96 @@
+service:
+  name: ${file(../../../../package.json ):name}-public-api-security
+
+plugins:
+  - serverless-webpack
+  - serverless-offline
+  - serverless-aws-documentation
+  - serverless-plugin-resource-tagging
+  - serverless-dotenv-plugin
+  - serverless-deployment-bucket
+provider:
+  name: aws
+  stackTags:
+    'Vugo Environment': 'Vugo'
+  apiVersion: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):apiVersion}
+  runtime: nodejs12.x
+  stage: ${opt:stage, 'dev'} # Stage env for backend development, dev env for app users testing, production for released version
+  region: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):region}
+  role: ${self:custom.iamRole}
+  deploymentBucket:
+    name: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):srcBucketName}
+    serverSideEncryption: AES256
+  environment:
+    STAGE: ${self:provider.stage}
+    S3_BUCKET_NAME:  ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):assetBucketName}
+  apiGateway: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):publicApiGateway}
+  tags:
+    apiVersion: ${self:provider.apiVersion}
+  versionFunctions: false
+
+functions:
+  get-promotion-token:
+    handler: security.getPromotionTokenHandler
+    events:
+      - http:
+          method: post
+          path: ${self:custom.publicBaseUrl}/security/movie-night/upfront-auth-token
+          cors: true
+          documentation:
+            summary: 'for promotion get castlab auth token'
+            description: 'Promotion refers to movie night'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains result'
+  get-onboard-token:
+    handler: security.getOnboardTokenHandler
+    events:
+      - http:
+          method: post
+          path: ${self:custom.publicBaseUrl}/security/onboard/upfront-auth-token
+          cors: true
+          documentation:
+            summary: 'For onboard user get castlab auth token'
+            description: 'For onboard user get castlab auth token'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains result'
+  get-consumer-token:
+    handler: security.getConsumerTokenHandler
+    events:
+      - http:
+          method: post
+          path: ${self:custom.publicBaseUrl}/security/consumer/upfront-auth-token
+          cors: true
+          documentation:
+            summary: 'For consumer get castlab auth token'
+            description: 'For consumer user get castlab auth token'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains result'
+  auth-hook:
+    handler: security.promotionAuthCallback
+    events:
+      - http:
+          method: post
+          path: ${self:custom.publicBaseUrl}/security/movie-night/auth/hook
+          cors: true
+          documentation:
+            summary: 'Auth hook for Castlabs'
+            description: 'Auth hook for Castlabs'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains result'   
+custom:
+  iamRole: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):publicIamRole}
+  publicBaseUrl: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):publicBaseUrl}
+  serverless-offline:
+    port: 4000
+  dotenv:
+    path: ../../../../.env 
+    basePath: ./
+    logging: false

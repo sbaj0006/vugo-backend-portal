@@ -1,0 +1,19 @@
+version: 0.2
+
+phases:
+    install:
+        runtime-versions:
+            nodejs: 12
+    build:
+        commands:
+            - echo Build started on `date`
+            - echo Building vugo backend
+            - printenv > .env
+    post_build:
+        commands:
+            - npm install
+            - npm run generate:migration:dev
+            - npm run migrate:dev
+            # - npm run migrate:revert:dev
+            - npm run deploy:user:dev
+            - npm run deploy:admin:dev

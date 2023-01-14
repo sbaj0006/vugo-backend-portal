@@ -1,0 +1,96 @@
+service:
+  name: ${file(../../../../package.json ):name}-admin-api-accounts
+
+plugins:
+  - serverless-webpack
+  - serverless-offline
+  - serverless-aws-documentation
+  - serverless-plugin-resource-tagging
+  - serverless-dotenv-plugin
+  - serverless-deployment-bucket
+provider:
+  name: aws
+  stackTags:
+    'Vugo Environment': 'Vugo'
+  apiVersion: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):apiVersion}
+  runtime: nodejs12.x
+  stage: ${opt:stage, 'dev'} # Stage env for backend development, dev env for app users testing, production for released version
+  region: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):region}
+  role: ${self:custom.iamRole}
+  environment:
+    STAGE: ${self:provider.stage}
+    S3_BUCKET_NAME:  ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):assetBucketName}
+  deploymentBucket:
+    name: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):srcBucketName}
+    serverSideEncryption: AES256
+  apiGateway: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):adminApiGateway}
+  tags:
+    apiVersion: ${self:provider.apiVersion}
+  versionFunctions: false
+
+functions:
+  get-admin-by-id:
+    handler: account.getAdminByIdHandler
+    events:
+      - http:
+          method: get
+          path: ${self:custom.adminBaseUrl}/accounts/{adminId}
+          cors: true
+          documentation:
+            summary: "get admin by id"
+            description: "get admin by id"
+            methodResponses:
+              - statusCode: "200"
+                responseBody:
+                  description: "Response contains result"
+  delete-admin-handler:
+    handler: account.deleteAdminHandler
+    events:
+      - http:
+          method: delete
+          path: ${self:custom.adminBaseUrl}/accounts/{adminId}
+          cors: true
+          documentation:
+            summary: "delete admin"
+            description: "delete admin"
+            methodResponses:
+              - statusCode: "200"
+                responseBody:
+                  description: "Response contains result"
+  create-admin:
+    handler: account.createAdminHandler
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/accounts
+          cors: true
+          documentation:
+            summary: "create admin"
+            description: "create admin"
+            methodResponses:
+              - statusCode: "200"
+                responseBody:
+                  description: "Response contains result"
+  admin-sign-in:
+    handler: account.adminSignInHandler
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/accounts/sign-in
+          cors: true
+          documentation:
+            summary: "admin sign in"
+            description: "admin sign in"
+            methodResponses:
+              - statusCode: "200"
+                responseBody:
+                  description: "Response contains result"
+custom:
+  iamRole: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):adminIamRole}
+  adminBaseUrl: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):adminBaseUrl}
+  serverless-offline:
+    port: 4000
+  dotenv:
+    path: ../../../../.env 
+    basePath: ./
+    logging: false

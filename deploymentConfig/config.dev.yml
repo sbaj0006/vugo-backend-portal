@@ -1,0 +1,18 @@
+apiVersion: v1 # Update this after releasing new version of API
+region: ap-southeast-2
+adminApiGateway:
+  restApiId: wcjiwjcjzi
+  restApiRootResourceId: x5xxb2hiu4
+  restApiResources: #so we can group multiple services under this resource
+      /admin: 4jptqt
+publicApiGateway:
+  restApiId: xhul2ybw47
+  restApiRootResourceId: aoczbtmbql
+  restApiResources: #so we can group multiple services under this resource
+      /public: 7u21ku
+srcBucketName : vugo-streaming-api-src
+assetBucketName: vugo-streaming-assets
+adminBaseUrl: admin
+publicBaseUrl: public
+adminIamRole: arn:aws:iam::557018148134:role/vugo-streaming-admin-lambda-execution-role
+publicIamRole: arn:aws:iam::557018148134:role/vugo-streaming-public-lambda-execution-role

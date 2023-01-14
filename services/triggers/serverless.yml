@@ -1,0 +1,42 @@
+service:
+  name: ${file(../../package.json):name}-triggers
+
+plugins:
+- serverless-webpack
+- serverless-offline
+- serverless-plugin-resource-tagging
+provider:
+  name: aws
+  stackTags:
+        "AEV Environment": "AFP"
+  runtime: nodejs12.x
+  stage: ${opt:stage, 'dev'} # Stage env for backend development, dev env for app users testing, production for released version
+  region: ${file(../../deploymentConfig/config.${self:provider.stage}.yml):region}
+  environment:
+    STAGE: ${self:provider.stage}
+    UserPoolId: ${file(../../deploymentConfig/config.${self:provider.stage}.yml):UserPoolId}
+    S3_BUCKET_NAME: aev-afp-prv115035-dev
+  versionFunctions: false
+  iamRoleStatements: # permissions for all of your functions can be set here
+    - Effect: Allow
+      Action:
+        - s3:*
+      Resource: 
+        - arn:aws:s3:::aev-afp-prv115035-dev
+functions:
+    
+  # trigger-s3-file-upload:
+  #   handler: functions/uploadFile.trigger
+  #   timeout: 900
+  #   provisionedConcurrency: 10 # Keep the function hot and assure that we will always have at least 10 lambda spots available for this
+  #   events:
+  #     - s3:
+  #       bucket: aev-afp-prv115035-dev
+  #       event: s3:ObjectCreated:*
+  #       existing: true
+  trigger-forgot-password:
+    handler: functions/forgotPassword.trigger
+    events:
+      - cognitoUserPool:
+          pool: ap-southeast-2_oapj3Vtia
+          trigger: CustomMessage

@@ -1,0 +1,276 @@
+service:
+  name: ${file(../../../../package.json ):name}-admin-api-videos
+
+plugins:
+  - serverless-webpack
+  - serverless-offline
+  - serverless-aws-documentation
+  - serverless-plugin-resource-tagging
+  - serverless-dotenv-plugin
+provider:
+  name: aws
+  stackTags:
+    'Vugo Environment': 'Vugo'
+  apiVersion: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):apiVersion}
+  runtime: nodejs12.x
+  stage: ${opt:stage, 'dev'} # Stage env for backend development, dev env for app users testing, production for released version
+  region: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):region}                                                # must validly reference a role defined in the service
+  role: ${self:custom.iamRole} # must validly reference a role defined in your account
+  environment:
+    STAGE: ${self:provider.stage}
+    S3_BUCKET_NAME:  ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):assetBucketName}
+  deploymentBucket:
+    name: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):srcBucketName}
+  apiGateway: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):adminApiGateway}
+  tags:
+    apiVersion: ${self:provider.apiVersion}
+  versionFunctions: false
+
+functions:
+  list-videos:
+    handler: video.listHandler
+    events:
+      - http:
+          method: get
+          path: ${self:custom.adminBaseUrl}/videos/admin-view
+          cors: true
+          documentation:
+            summary: "get the full list of videos for admin view"
+            description: "get the full list of videos for admin view"
+            methodResponses:
+              - statusCode: "200"
+                responseBody:
+                  description: "The list of videos metadata"
+  get-video-by-id:
+    handler: video.getByIdHandler
+    events:
+      - http:
+          method: get
+          path: ${self:custom.adminBaseUrl}/videos/{videoId}
+          cors: true
+          documentation:
+            summary: "get a video by id"
+            description: "get a video by id"
+            methodResponses:
+              - statusCode: "200"
+                responseBody:
+                  description: "The video metadata"
+  get-title-groups:
+    handler: video.getTitleGroupsHandler
+    events:
+      - http:
+          method: get
+          path: ${self:custom.adminBaseUrl}/videos/groups
+          cors: true
+          documentation:
+            summary: "get all title groups"
+            description: "get all title groups"
+            methodResponses:
+              - statusCode: "200"
+                responseBody:
+                  description: "All title groups"
+  get-title-group-by-id:
+    handler: video.getTitleGroupByIdHandler
+    events:
+      - http:
+          method: get
+          path: ${self:custom.adminBaseUrl}/videos/groups/{groupId}
+          cors: true
+          documentation:
+            summary: "get a title group by id"
+            description: "get a title group by id"
+            methodResponses:
+              - statusCode: "200"
+                responseBody:
+                  description: "a title group"
+  create-videos:
+    handler: video.createHandler
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/videos
+          cors: true
+          documentation:
+            summary: "create a new video by admin"
+            description: "create a new video by admin"
+            methodResponses:
+              - statusCode: "200"
+                responseBody:
+                  description: "the created video"
+  update-videos:
+    handler: video.updateHandler
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/videos/{videoId}
+          cors: true
+          documentation:
+            summary: "update a video by admin"
+            description: "update a video by admin"
+            methodResponses:
+              - statusCode: "200"
+                responseBody:
+                  description: "the updated video"
+  delete-videos:
+    handler: video.deleteHandler
+    events:
+      - http:
+          method: delete
+          path: ${self:custom.adminBaseUrl}/videos/{videoId}
+          cors: true
+          documentation:
+            summary: "delete a video by admin"
+            description: "delete a video by admin"
+            methodResponses:
+              - statusCode: "200"
+                responseBody:
+                  description: ""
+  publish-videos:
+    handler: video.publishHandler
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/videos/{videoId}/publish
+          cors: true
+          documentation:
+            summary: "publish a video by admin"
+            description: "publish a video by admin"
+            methodResponses:
+              - statusCode: "200"
+                responseBody:
+                  description: "a boolean value indicating the result of the publication"
+  unpublish-videos:
+    handler: video.unpublishHandler
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/videos/{videoId}/unpublish
+          cors: true
+          documentation:
+            summary: "unpublish a video by admin"
+            description: "unpublish a video by admin"
+            methodResponses:
+              - statusCode: "200"
+                responseBody:
+                  description: "a boolean value indicating the result of the unpublication"
+  get-rating-enums:
+    handler: video.getRatingsHandler
+    events:
+      - http:
+          method: get
+          path: ${self:custom.adminBaseUrl}/videos/ratings
+          cors: true
+          documentation:
+            summary: "get the list of rating enum"
+            description: "get the list of rating enum"
+            methodResponses:
+              - statusCode: "200"
+                responseBody:
+                  description: "a list of keyValuePair for rating enum"
+  get-genre-enums:
+    handler: video.getGenresHandler
+    events:
+      - http:
+          method: get
+          path: ${self:custom.adminBaseUrl}/videos/genres
+          cors: true
+          documentation:
+            summary: "get the list of genre enum"
+            description: "get the list of genre enum"
+            methodResponses:
+              - statusCode: "200"
+                responseBody:
+                  description: "a list of keyValuePair for genre enum"
+  get-all-media-files:
+    handler: video.getMediaFilesHandler
+    events:
+      - http:
+          method: get
+          path: ${self:custom.adminBaseUrl}/videos/media-files
+          cors: true
+          documentation:
+            summary: "get the list of media files in dynamo db"
+            description: "get the list of media files in dynamo db"
+            methodResponses:
+              - statusCode: "200"
+                responseBody:
+                  description: "the list of media files in dynamo db"    
+  create-title-group:
+    handler: video.createGroupHandler
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/videos/groups
+          cors: true
+          documentation:
+            summary: "create a new title group by admin"
+            description: "create a new title group by admin"
+            methodResponses:
+              - statusCode: "200"
+                responseBody:
+                  description: "the created title group"   
+  update-title-group:
+    handler: video.updateGroupHandler
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/videos/groups/{groupId}
+          cors: true
+          documentation:
+            summary: "update a title group by admin"
+            description: "update a title group by admin"
+            methodResponses:
+              - statusCode: "200"
+                responseBody:
+                  description: "the update title group"
+  update-grouped-titles:
+    handler: video.updateGroupedTitlesHandler
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/videos/groups/{groupId}/titles
+          cors: true
+          documentation:
+            summary: "update the list of titles for a group by admin"
+            description: "update the list of titles for a group by admin"
+            methodResponses:
+              - statusCode: "200"
+                responseBody:
+                  description: "the update title group"    
+  delete-grouped-title:
+    handler: video.deleteGroupedTitleHandler
+    events:
+      - http:
+          method: delete
+          path: ${self:custom.adminBaseUrl}/videos/groups/{groupId}/titles/{titleId}
+          cors: true
+          documentation:
+            summary: "remove a title from a title group"
+            description: "remove a title from a title group"
+            methodResponses:
+              - statusCode: "200"
+                responseBody:
+                  description: ""    
+  delete-title-group:
+    handler: video.deleteTitleGroupHandler
+    events:
+      - http:
+          method: delete
+          path: ${self:custom.adminBaseUrl}/videos/groups/{groupId}
+          cors: true
+          documentation:
+            summary: "delete a title group"
+            description: "delete a title group"
+            methodResponses:
+              - statusCode: "200"
+                responseBody:
+                  description: ""
+custom:
+  iamRole: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):adminIamRole}
+  adminBaseUrl: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):adminBaseUrl}
+  serverless-offline:
+    port: 4000
+  dotenv:
+    path: ../../../../.env 
+    basePath: ./
+    logging: false

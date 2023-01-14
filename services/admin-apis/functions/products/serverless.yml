@@ -1,0 +1,123 @@
+service:
+  name: ${file(../../../../package.json ):name}-admin-api-products
+
+plugins:
+  - serverless-webpack
+  - serverless-offline
+  - serverless-aws-documentation
+  - serverless-plugin-resource-tagging
+  - serverless-dotenv-plugin
+  - serverless-deployment-bucket
+provider:
+  name: aws
+  stackTags:
+    'Vugo Environment': 'Vugo'
+  apiVersion: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):apiVersion}
+  runtime: nodejs12.x
+  stage: ${opt:stage, 'dev'} # Stage env for backend development, dev env for app users testing, production for released version
+  region: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):region}
+  role: ${self:custom.iamRole}
+  environment:
+    STAGE: ${self:provider.stage}
+    S3_BUCKET_NAME:  ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):assetBucketName}
+  deploymentBucket:
+    name: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):srcBucketName}
+  apiGateway: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):adminApiGateway}
+  tags:
+    apiVersion: ${self:provider.apiVersion}
+  versionFunctions: false
+
+functions:
+  create-product:
+    handler: product.createProduct
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/products
+          cors: true
+          documentation:
+            summary: 'Create Product'
+            description: 'Create Product'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Product data'
+  delete-product:
+    handler: product.deleteProductById
+    events:
+      - http:
+          method: delete
+          path: ${self:custom.adminBaseUrl}/products/{productId}
+          cors: true
+          documentation:
+            summary: 'Delete Product'
+            description: 'Delete Product'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Deleted Product'
+  get-product:
+    handler: product.getProductById
+    events:
+      - http:
+          method: get
+          path: ${self:custom.adminBaseUrl}/products/{productId}
+          cors: true
+          documentation:
+            summary: 'Get Product'
+            description: 'Get Product'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Product Details'
+  update-product:
+    handler: product.updateProductById
+    events:
+      - http:
+          method: put
+          path: ${self:custom.adminBaseUrl}/products/{productId}
+          cors: true
+          documentation:
+            summary: 'Update Product'
+            description: 'Update Product'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Updated Product Details'
+  get-products:
+    handler: product.getAllProducts
+    events:
+      - http:
+          method: get
+          path: ${self:custom.adminBaseUrl}/products
+          cors: true
+          documentation:
+            summary: 'Get all Products'
+            description: 'Get all Products'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Product data'
+  get-active-products:
+    handler: product.getAllActiveProducts
+    events:
+      - http:
+          method: get
+          path: ${self:custom.adminBaseUrl}/products/active
+          cors: true
+          documentation:
+            summary: 'Get all Active Products'
+            description: 'Get all Active Products'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Active Product data'
+custom:
+  iamRole: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):adminIamRole}
+  adminBaseUrl: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):adminBaseUrl}
+  serverless-offline:
+    port: 4000
+  dotenv:
+    path: ../../../../.env 
+    basePath: ./
+    logging: false

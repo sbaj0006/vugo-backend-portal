@@ -1,0 +1,17 @@
+export enum RailType {
+  Banner = 0,
+  MoviePoster = 1,
+  SeriesHome = 2,
+  SeriesPoster = 3,
+  MovieBanner = 4,
+  SeriesBanner = 5,
+  Layout1 = 6,
+  Layout2 = 7,
+  Layout3 = 8,
+  Layout4 = 9,
+  Layout5 = 10,
+  Layout6 = 11,
+  Layout7 = 12,
+  Layout8 = 13,
+  Layout9 = 14,
+}

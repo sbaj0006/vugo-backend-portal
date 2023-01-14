@@ -1,0 +1,235 @@
+service:
+  name: ${file(../../../../package.json ):name}-admin-api-series
+
+plugins:
+  - serverless-webpack
+  - serverless-offline
+  - serverless-aws-documentation
+  - serverless-plugin-resource-tagging
+  - serverless-dotenv-plugin
+provider:
+  name: aws
+  stackTags:
+    'Vugo Environment': 'Vugo'
+  apiVersion: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):apiVersion}
+  runtime: nodejs12.x
+  stage: ${opt:stage, 'dev'} # Stage env for backend development, dev env for app users testing, production for released version
+  region: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):region}                                                # must validly reference a role defined in the service
+  role: ${self:custom.iamRole} # must validly reference a role defined in your account
+  environment:
+    STAGE: ${self:provider.stage}
+    S3_BUCKET_NAME:  ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):assetBucketName}
+  deploymentBucket:
+    name: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):srcBucketName}
+  apiGateway: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):adminApiGateway}
+  tags:
+    apiVersion: ${self:provider.apiVersion}
+  versionFunctions: false
+
+functions:
+  create-series:
+    handler: series.createSeries
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/series
+          cors: true
+          documentation:
+            summary: 'Create a series'
+            description: 'Create a series'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Series data Id'
+  get-all-series:
+    handler: series.getAllSeries
+    events:
+      - http:
+          method: get
+          path: ${self:custom.adminBaseUrl}/series
+          cors: true
+          documentation:
+            summary: 'Get all series'
+            description: 'Get all series including published and unpublished'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Series data'
+  get-series-by-id:
+    handler: series.getSeriesById
+    events:
+      - http:
+          method: get
+          path: ${self:custom.adminBaseUrl}/series/{seriesId}
+          cors: true
+          documentation:
+            summary: 'Get series by Id'
+            description: 'Get series by Id'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Series data'
+  update-series-by-id:
+    handler: series.updateSeriesById
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/series/{seriesId}
+          cors: true
+          documentation:
+            summary: 'Update series by Id'
+            description: 'Update series by Id'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Series data'
+  create-season:
+    handler: series.createSeason
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/series/{seriesId}/seasons
+          cors: true
+          documentation:
+            summary: 'Create season of a particular series'
+            description: 'Create season of a particular series'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Season data'
+  update-season-by-Id:
+    handler: series.updateSeasonById
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/series/{seriesId}/seasons/{seasonId}
+          cors: true
+          documentation:
+            summary: 'Update season of a particular series'
+            description: 'Update season of a particular series'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Season data'
+  create-episode:
+    handler: series.createEpisode
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/series/{seriesId}/seasons/{seasonId}/episodes
+          cors: true
+          documentation:
+            summary: 'Create episode of a particular season'
+            description: 'Create episode of a particular season'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Episode data'
+  update-episode-by-Id:
+    handler: series.updateEpisodeById
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/series/{seriesId}/seasons/{seasonId}/episodes/{episodeId}
+          cors: true
+          documentation:
+            summary: 'Update episode of a particular season'
+            description: 'Update episode of a particular season'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Updated Episode data'
+  publish-series:
+    handler: series.publishSeries
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/series/publish/series/{seriesId}
+          cors: true
+          documentation:
+            summary: 'Publish series'
+            description: 'Publish Series'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Published Series'
+  unpublish-series:
+    handler: series.unpublishSeries
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/series/unpublish/series/{seriesId}
+          cors: true
+          documentation:
+            summary: 'Unpublish series'
+            description: 'Unpublish Series'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Unpublished Series'
+  publish-season:
+    handler: series.publishSeason
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/series/publish/seasons/{seasonId}
+          cors: true
+          documentation:
+            summary: 'Publish season'
+            description: 'Publish season'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Published season'
+  unpublish-season:
+    handler: series.unpublishSeason
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/series/unpublish/seasons/{seasonId}
+          cors: true
+          documentation:
+            summary: 'Unpublish season'
+            description: 'Unpublish season'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Unpublished season'
+  publish-episode:
+    handler: series.publishEpisode
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/series/publish/episodes/{episodeId}
+          cors: true
+          documentation:
+            summary: 'Publish episode'
+            description: 'Publish episode'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Published episode'
+  unpublish-episode:
+    handler: series.unpublishEpisode
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/series/unpublish/episodes/{episodeId}
+          cors: true
+          documentation:
+            summary: 'Unpublish episode'
+            description: 'Unpublish episode'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Unpublished episode'
+
+custom:
+  iamRole: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):adminIamRole}
+  adminBaseUrl: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):adminBaseUrl}
+  serverless-offline:
+    port: 4000
+  dotenv:
+    path: ../../../../.env 
+    basePath: ./
+    logging: false

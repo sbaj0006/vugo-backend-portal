@@ -1,0 +1,179 @@
+service:
+  name: ${file(../../../../package.json ):name}-admin-api-promotions
+
+plugins:
+  - serverless-webpack
+  - serverless-offline
+  - serverless-aws-documentation
+  - serverless-plugin-resource-tagging
+  - serverless-dotenv-plugin
+  - serverless-deployment-bucket
+provider:
+  name: aws
+  stackTags:
+    'Vugo Environment': 'Vugo'
+  apiVersion: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):apiVersion}
+  runtime: nodejs12.x
+  stage: ${opt:stage, 'dev'} # Stage env for backend development, dev env for app users testing, production for released version
+  region: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):region}                                                # must validly reference a role defined in the service
+  role: ${self:custom.iamRole} # must validly reference a role defined in your account
+  environment:
+    STAGE: ${self:provider.stage}
+    S3_BUCKET_NAME:  ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):assetBucketName}
+  deploymentBucket:
+    name: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):srcBucketName}
+  apiGateway: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):adminApiGateway}
+  tags:
+    apiVersion: ${self:provider.apiVersion}
+  versionFunctions: false
+
+functions:
+  create-promotion:
+    handler: promotion.createPromotion
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/promotions
+          cors: true
+          documentation:
+            summary: 'Create Promotions'
+            description: 'Create Promotions'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Promotions Details'
+  get-all-promotion:
+    handler: promotion.getAllPromotions
+    events:
+      - http:
+          method: get
+          path: ${self:custom.adminBaseUrl}/promotions
+          cors: true
+          documentation:
+            summary: 'Get Promotions'
+            description: 'Get Promotions'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Promotions Details'
+  get-promotion-by-id:
+    handler: promotion.getPromotionById
+    events:
+      - http:
+          method: get
+          path: ${self:custom.adminBaseUrl}/promotions/{promotionId}
+          cors: true
+          documentation:
+            summary: 'Get Promotion by Id'
+            description: 'Get Promotion by Id'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Promotions Details'
+  update-promotion-by-id:
+    handler: promotion.updatePromotionById
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/promotions/{promotionId}
+          cors: true
+          documentation:
+            summary: 'Update Promotion by Id'
+            description: 'Update Promotion by Id'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Promotions Details'
+  get-all-active-promotion:
+    handler: promotion.getAllActivePromotions
+    events:
+      - http:
+          method: get
+          path: ${self:custom.adminBaseUrl}/promotions/active
+          cors: true
+          documentation:
+            summary: 'Get All Active Promotions'
+            description: 'Get All Active Promotions'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains All Active Promotions Details'
+  get-promotion-by-name:
+    handler: promotion.getPromotionByName
+    events:
+      - http:
+          method: get
+          path: ${self:custom.adminBaseUrl}/promotions/search/name/{promotionName}
+          cors: true
+          documentation:
+            summary: 'Search Promotions'
+            description: 'Search Promotions'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Searched Promotions Details'
+  generate-promotion-codes:
+    handler: promotion.generatePromotionCodes
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/promotions/{promotionId}/codes
+          cors: true
+          documentation:
+            summary: 'Generate Promotion Code'
+            description: 'Generate Promotion Code'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains  Promotion Codes'
+  redeem-code:
+    handler: promotion.redeemCode
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/promotions/codes/redeem
+          cors: true
+          documentation:
+            summary: 'Redeem Promotion Code'
+            description: 'Redeem Promotion Code'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Promotion Codes'
+  verify-token:
+    handler: promotion.verifyToken
+    events:
+      - http:
+          method: post
+          path: ${self:custom.adminBaseUrl}/promotions/tokens/verify
+          cors: true
+          documentation:
+            summary: 'Verify Token'
+            description: 'Verify Token'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Verified Token'
+  delete-promotions:
+    handler: promotion.deletePromotion
+    events:
+      - http:
+          method: delete
+          path: ${self:custom.adminBaseUrl}/promotions/{promotionId}
+          cors: true
+          documentation:
+            summary: 'Delete Promotions'
+            description: 'Delete Promotions'
+            methodResponses:
+              - statusCode: '200'
+                responseBody:
+                  description: 'Response contains Delete Promotions'
+custom:
+  iamRole: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):adminIamRole}
+  adminBaseUrl: ${file(../../../../deploymentConfig/config.${self:provider.stage}.yml):adminBaseUrl}
+  serverless-offline:
+    port: 4000
+  dotenv:
+    path: ../../../../.env 
+    basePath: ./
+    logging: false
